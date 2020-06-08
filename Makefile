@@ -3,12 +3,12 @@ default: help
 
 .PHONY: test
 test:   ## Run test suite
-	pytest
+	docker-compose run app pytest tests/test_online.py
 
 
 .PHONY: build
 build:  ## Build wheel
-	python ./setup.py bdist_wheel -d build
+	docker-compose run app python ./setup.py bdist_wheel -d build
 
 
 .PHONY: help
