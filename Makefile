@@ -3,7 +3,7 @@ default: help
 
 .PHONY: test
 test:   ## Run test suite
-	docker-compose run app pytest tests/test_online.py
+	docker-compose run app pytest tests
 
 
 .PHONY: build
