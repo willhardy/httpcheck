@@ -4,7 +4,14 @@ import json
 import pykafka
 
 
-async def publish_logs(logs, kafka_config):
+def get_publish_fn(kafka_config):
+    if kafka_config.broker:
+        return get_publish_fn_kafka(kafka_config)
+    else:
+        return get_publish_fn_text(kafka_config)
+
+
+def get_publish_fn_kafka(kafka_config):
     if kafka_config.ssl_keyfile:
         ssl_config = pykafka.connection.SslConfig(
             kafka_config.ssl_cafile,
@@ -13,16 +20,19 @@ async def publish_logs(logs, kafka_config):
         )
     else:
         ssl_config = None
+
     client = pykafka.KafkaClient(hosts=kafka_config.broker, ssl_config=ssl_config)
     topic = client.topics[kafka_config.topic]
     producer = topic.get_producer()
-    async for attempt_log in logs:
+
+    def publish(attempt_log):
         data = json.dumps(dataclasses.asdict(attempt_log))
         print(data)
         producer.produce(data.encode("utf8"))
 
+    return publish
 
-async def publish_logs_text(logs, kafka_config):
-    async for attempt_log in logs:
-        data = json.dumps(dataclasses.asdict(attempt_log))
-        print(data)
+
+def get_publish_fn_text(logs):
+    publish_fn = lambda log: print(json.dumps(dataclasses.asdict(log)))
+    return publish_fn

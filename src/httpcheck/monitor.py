@@ -1,4 +1,3 @@
-import asyncio
 import contextlib
 import dataclasses
 import datetime
@@ -9,8 +8,6 @@ from typing import Optional
 
 import httpcore
 import httpx
-
-from . import publish
 
 
 def now_isoformat():
@@ -54,6 +51,7 @@ class HttpMonitor:
     def __init__(self, config):
         self.config = config
 
+        self.scheduler_job = None
         self.currently_online = True
         self.time_of_next_attempt = time.time()
 
@@ -83,7 +81,7 @@ class HttpMonitor:
                 attempt_log.process_response(response, self.config.regex)
                 break  # No retry necessary, we're done
 
-        self.currently_online = attempt_log.is_online
+        self.set_currently_online(attempt_log.is_online)
         return attempt_log
 
     async def make_http_request(self):
@@ -95,18 +93,34 @@ class HttpMonitor:
         async with httpx.AsyncClient(timeout=_timeout, headers=headers) as client:
             return await client.request(self.config.method, self.config.url)
 
-    async def monitor(self):
-        while True:
-            yield await self.make_attempt()
-            self.schedule_next_attempt()
-            await self.sleep_until_next_attempt()
+    def update_scheduler(self):
+        if self.scheduler_job is None:
+            return
+        self.scheduler_job.reschedule("interval", seconds=self.current_frequency)
 
-    async def monitor_and_publish(self, kafka_config):
-        logs = self.monitor()
-        if kafka_config.broker:
-            await publish.publish_logs(logs, kafka_config)
-        else:
-            await publish.publish_logs_text(logs, kafka_config)
+    def remove_from_scheduler(self):
+        if self.scheduler_job is None:
+            return
+        self.scheduler_job.remove()
+
+    def add_to_scheduler(self, scheduler, publish_fn):
+        # Run immediately and schedule repeats
+        scheduler.add_job(self.attempt_and_publish, args=[publish_fn])
+        self.scheduler_job = scheduler.add_job(
+            self.attempt_and_publish,
+            "interval",
+            seconds=self.current_frequency,
+            args=[publish_fn],
+            id=self.config.url,
+        )
+
+    def set_currently_online(self, value):
+        self.currently_online = value
+        self.update_scheduler()
+
+    async def attempt_and_publish(self, publish_fn):
+        log = await self.make_attempt()
+        publish_fn(log)
 
     @property
     def current_frequency(self):
@@ -114,11 +128,3 @@ class HttpMonitor:
             return self.config.frequency_online
         else:
             return self.config.frequency_offline
-
-    def schedule_next_attempt(self):
-        time_of_next_attempt = self.time_of_next_attempt + float(self.current_frequency)
-        self.time_of_next_attempt = max([time.time(), time_of_next_attempt])
-
-    async def sleep_until_next_attempt(self):
-        time_until_next_attempt = max([self.time_of_next_attempt - time.time(), 0])
-        await asyncio.sleep(time_until_next_attempt)
