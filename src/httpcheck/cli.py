@@ -3,17 +3,19 @@ import click
 import httpcheck
 
 
+# Here is a preconfigured click Path type
 FilePath = click.Path(exists=True, allow_dash=False, dir_okay=False, resolve_path=True)
 
 
 @click.command()
 @click.argument("urls", nargs=-1)
 @click.option("--identifier", default="")
-@click.option("--method", default="GET")
-@click.option("--timeout", default=30)
-@click.option("--retries", default=2)
+@click.option("--method", default="HEAD", show_default=True)
+@click.option("--timeout", default=30, show_default=True)
+@click.option("--retries", default=1, show_default=True)
 @click.option("--regex")
-@click.option("--frequency", default=300)
+@click.option("--frequency-online", default=300, show_default=True)
+@click.option("--frequency-offline", default=60, show_default=True)
 @click.option("--kafka-broker")
 @click.option("--kafka-topic")
 @click.option("--kafka-ssl-cafile", type=FilePath)
@@ -27,7 +29,8 @@ def main(
     timeout,
     retries,
     regex,
-    frequency,
+    frequency_online,
+    frequency_offline,
     websites,
     kafka_broker,
     kafka_topic,
@@ -43,10 +46,10 @@ def main(
             method=method,
             url=url,
             timeout_read=timeout,
-            retries=2,
+            retries=retries,
             regex=regex,
-            frequency_online=frequency,
-            frequency_offline=frequency,
+            frequency_online=frequency_online,
+            frequency_offline=frequency_offline,
         )
         monitor_configs[url] = monitor_config
 
