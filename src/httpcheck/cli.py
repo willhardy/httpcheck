@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 import click
 
@@ -18,7 +19,7 @@ import httpcheck
 @click.option("--kafka-ssl-ca")
 @click.option("--kafka-ssl-cert")
 @click.option("--kafka-ssl-key")
-@click.option("--websites")
+@click.option("--websites", type=click.File("r"))
 def main(
     urls,
     identifier,
@@ -49,6 +50,13 @@ def main(
         )
         monitor_configs.append(monitor_config)
 
+    if websites:
+        websites_data = json.load(websites)
+        for key, config in websites_data.items():
+            if "url" not in config:
+                config["url"] = key
+            monitor_configs.append(httpcheck.HttpMonitorConfig(**config))
+
     kafka_config = httpcheck.KafkaConfig(
         broker=kafka_broker,
         topic=kafka_topic,
@@ -56,8 +64,6 @@ def main(
         ssl_certfile=kafka_ssl_cert,
         ssl_keyfile=kafka_ssl_key,
     )
-
-    # XXX parse websites to add to monitor_configs
 
     asyncio.run(monitor_all(*monitor_configs, kafka_config=kafka_config))
 
