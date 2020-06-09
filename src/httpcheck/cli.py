@@ -6,6 +6,9 @@ import click
 import httpcheck
 
 
+SSLFilePath = click.Path(exists=True, allow_dash=False, dir_ok=False, resolve_path=True)
+
+
 @click.command()
 @click.argument("urls", nargs=-1)
 @click.option("--identifier", default="")
@@ -16,9 +19,9 @@ import httpcheck
 @click.option("--frequency", default=300)
 @click.option("--kafka-broker")
 @click.option("--kafka-topic")
-@click.option("--kafka-ssl-ca")
-@click.option("--kafka-ssl-cert")
-@click.option("--kafka-ssl-key")
+@click.option("--kafka-ssl-cafile", type=SSLFilePath)
+@click.option("--kafka-ssl-certfile", type=SSLFilePath)
+@click.option("--kafka-ssl-keyfile", type=SSLFilePath)
 @click.option("--websites", type=click.File("r"))
 def main(
     urls,
@@ -31,9 +34,9 @@ def main(
     websites,
     kafka_broker,
     kafka_topic,
-    kafka_ssl_ca,
-    kafka_ssl_cert,
-    kafka_ssl_key,
+    kafka_ssl_cafile,
+    kafka_ssl_certfile,
+    kafka_ssl_keyfile,
 ):
 
     monitor_configs = []
@@ -60,9 +63,9 @@ def main(
     kafka_config = httpcheck.KafkaConfig(
         broker=kafka_broker,
         topic=kafka_topic,
-        ssl_cafile=kafka_ssl_ca,
-        ssl_certfile=kafka_ssl_cert,
-        ssl_keyfile=kafka_ssl_key,
+        ssl_cafile=kafka_ssl_cafile,
+        ssl_certfile=kafka_ssl_certfile,
+        ssl_keyfile=kafka_ssl_keyfile,
     )
 
     asyncio.run(monitor_all(*monitor_configs, kafka_config=kafka_config))
