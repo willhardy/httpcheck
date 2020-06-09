@@ -13,3 +13,12 @@ class HttpMonitorConfig:
     regex: Optional[str] = None
     frequency_online: int = 300  # seconds
     frequency_offline: int = 60  # seconds
+
+
+@dataclasses.dataclass
+class KafkaConfig:
+    broker: str
+    topic: str
+    ssl_cafile: str
+    ssl_certfile: str
+    ssl_keyfile: str

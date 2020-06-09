@@ -10,6 +10,8 @@ from typing import Optional
 import httpcore
 import httpx
 
+from . import publish
+
 
 def now_isoformat():
     return datetime.datetime.utcnow().isoformat()
@@ -98,6 +100,13 @@ class HttpMonitor:
             yield await self.make_attempt()
             self.schedule_next_attempt()
             await self.sleep_until_next_attempt()
+
+    async def monitor_and_publish(self, kafka_config):
+        logs = self.monitor()
+        if kafka_config.broker:
+            await publish.publish_logs(logs, kafka_config)
+        else:
+            await publish.publish_logs_text(logs, kafka_config)
 
     @property
     def current_frequency(self):
