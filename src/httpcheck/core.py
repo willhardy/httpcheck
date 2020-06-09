@@ -20,7 +20,9 @@ def parse_websites_json(filename):
 
 
 def monitor_all(monitor_configs, kafka_config, websites_filename):
-    monitor_configs_from_file = dict(parse_websites_json(websites_filename))
+    monitor_configs_from_file = (
+        dict(parse_websites_json(websites_filename)) if websites_filename else {}
+    )
     all_monitor_configs = {**monitor_configs_from_file, **monitor_configs}
     publish_fn = publish.get_publish_fn(kafka_config)
     monitors = {}
