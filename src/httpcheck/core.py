@@ -19,22 +19,40 @@ def parse_websites_json(filename):
         yield key, HttpMonitorConfig(**config)
 
 
-def monitor_all(monitor_configs, kafka_config, websites_filename):
+def monitor_all(monitor_configs, kafka_config, websites_filename, once=False):
     monitor_configs_from_file = (
         dict(parse_websites_json(websites_filename)) if websites_filename else {}
     )
     all_monitor_configs = {**monitor_configs_from_file, **monitor_configs}
     publish_fn = publish.get_publish_fn(kafka_config)
+
     monitors = {}
 
-    scheduler = AsyncIOScheduler()
     for key, config in all_monitor_configs.items():
         monitor = HttpMonitor(config)
-        monitor.add_to_scheduler(scheduler, publish_fn)
         monitors[key] = monitor
+
+    if once:
+
+        async def run_once():
+            coroutines = (
+                monitor.attempt_and_publish(publish_fn) for monitor in monitors.values()
+            )
+            await asyncio.gather(*coroutines)
+
+        asyncio.run(run_once())
+        return
+
+    scheduler = AsyncIOScheduler()
+    for monitor in monitors.values():
+        monitor.add_to_scheduler(scheduler, publish_fn)
     scheduler.start()
 
     def reload_config(signum, frame):
+        nonlocal websites_filename
+        nonlocal monitors
+        if not websites_filename:
+            return
         seen = set()
         updates = dict(parse_websites_json(websites_filename))
         for key in monitors:

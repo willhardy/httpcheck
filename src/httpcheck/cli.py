@@ -22,6 +22,7 @@ FilePath = click.Path(exists=True, allow_dash=False, dir_okay=False, resolve_pat
 @click.option("--kafka-ssl-certfile", type=FilePath)
 @click.option("--kafka-ssl-keyfile", type=FilePath)
 @click.option("--websites", type=FilePath)
+@click.option("--once", is_flag=True)
 def main(
     urls,
     identifier,
@@ -37,6 +38,7 @@ def main(
     kafka_ssl_cafile,
     kafka_ssl_certfile,
     kafka_ssl_keyfile,
+    once,
 ):
 
     monitor_configs = {}
@@ -61,7 +63,7 @@ def main(
         ssl_keyfile=kafka_ssl_keyfile,
     )
 
-    httpcheck.monitor_all(monitor_configs, kafka_config, websites)
+    httpcheck.monitor_all(monitor_configs, kafka_config, websites, once=once)
 
 
 if __name__ == "__main__":
