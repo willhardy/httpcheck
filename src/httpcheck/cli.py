@@ -1,12 +1,12 @@
 import asyncio
-import json
+import logging
 
 import click
 
 import httpcheck
 
 
-SSLFilePath = click.Path(exists=True, allow_dash=False, dir_ok=False, resolve_path=True)
+FilePath = click.Path(exists=True, allow_dash=False, dir_okay=False, resolve_path=True)
 
 
 @click.command()
@@ -19,10 +19,11 @@ SSLFilePath = click.Path(exists=True, allow_dash=False, dir_ok=False, resolve_pa
 @click.option("--frequency", default=300)
 @click.option("--kafka-broker")
 @click.option("--kafka-topic")
-@click.option("--kafka-ssl-cafile", type=SSLFilePath)
-@click.option("--kafka-ssl-certfile", type=SSLFilePath)
-@click.option("--kafka-ssl-keyfile", type=SSLFilePath)
-@click.option("--websites", type=click.File("r"))
+@click.option("--kafka-ssl-cafile", type=FilePath)
+@click.option("--kafka-ssl-certfile", type=FilePath)
+@click.option("--kafka-ssl-keyfile", type=FilePath)
+@click.option("--websites", type=FilePath)
+@click.option("--verbose", is_flag=True)
 def main(
     urls,
     identifier,
@@ -37,28 +38,26 @@ def main(
     kafka_ssl_cafile,
     kafka_ssl_certfile,
     kafka_ssl_keyfile,
+    verbose,
 ):
+    if verbose:
+        logging.basicConfig(level=logging.DEBUG)
 
-    monitor_configs = []
+    monitor_configs = {}
+
+    # Generate the config for each URL on the command line
     for url in urls:
         monitor_config = httpcheck.HttpMonitorConfig(
             identifier=identifier,
             method=method,
             url=url,
             timeout_read=timeout,
-            retries=2,
+            retries=retries,
             regex=regex,
             frequency_online=frequency,
             frequency_offline=frequency,
         )
-        monitor_configs.append(monitor_config)
-
-    if websites:
-        websites_data = json.load(websites)
-        for key, config in websites_data.items():
-            if "url" not in config:
-                config["url"] = key
-            monitor_configs.append(httpcheck.HttpMonitorConfig(**config))
+        monitor_configs[url] = monitor_config
 
     kafka_config = httpcheck.KafkaConfig(
         broker=kafka_broker,
@@ -68,18 +67,11 @@ def main(
         ssl_keyfile=kafka_ssl_keyfile,
     )
 
-    asyncio.run(monitor_all(*monitor_configs, kafka_config=kafka_config))
-
-
-async def monitor_all(*monitor_configs, kafka_config):
-    tasks = []
-
-    for config in monitor_configs:
-        coroutine = httpcheck.HttpMonitor(config).monitor_and_publish(kafka_config)
-        tasks.append(asyncio.create_task(coroutine))
-
-    for task in tasks:
-        await task
+    asyncio.run(
+        httpcheck.monitor_all(
+            monitor_configs, kafka_config=kafka_config, websites_file=websites
+        )
+    )
 
 
 if __name__ == "__main__":
