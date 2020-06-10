@@ -2,6 +2,20 @@
 
 A tool to monitor website availability
 
+## Installation
+
+Install from this directory using pip:
+
+```bash
+$ pip install -e .
+```
+
+Alternatively, we can run it directly in docker:
+
+```bash
+$ docker-compose run --rm httpcheck httpcheck --help
+```
+
 ## Basic Usage
 
 Run the following command to monitor the URL https://example.com using the default settings:
@@ -25,24 +39,50 @@ $ httpcheck https://one.example.com https://two.example.com --frequency 60
 
 Note that the order of output is not guaranteed to be sorted, but will roughly be ordered by `timestamp` + `response_time`.
 
-## Command line options
+## Command line
 
-The following parameters are available, each takes a single argument:
+```bash
+Usage: httpcheck [OPTIONS] [URLS]...
 
-* `--method` The HTTP method to use (default: `GET`)
-* `--identifier` A string to be used in the User-Agent header when making requests.
-* `--timeout` Number of seconds to wait for the response after an HTTP connection is made (default: `30`)
-* `--retries` Number of immediate retries to make if a connection error occurs (default: `1`)
-* `--regex` A regular expression to search for in the response
-* `--frequency-online` Number of seconds to wait before checking an online website again (default: `300`)
-* `--frequency-offline` Number of seconds to wait before checking an offline website again (default: `60`)
-* `--frequency` Number of seconds, sets both online and offline frequency to this value
-* `--kafka-broker` Name and port for the Kafka broker to send results to.
-* `--kafka-topic` Name of the topic in Kafka
-* `--kafka-ssl-cafile` A filename for a CA file for connecting to Kafka via SSL
-* `--kafka-ssl-certfile` A filename for a certificate file for connecting to Kafka via SSL
-* `--kafka-ssl-keyfile` A filename for a secret keyfile for connecting to Kafka via SSL
-* `--websites` A filename for a configuration file with many websites and custom configuration (see below)
+Options:
+  --identifier TEXT            A string to be used in the User-Agent header
+                               when making requests.
+
+  --method TEXT                The HTTP method to use  [default: HEAD]
+  --timeout INTEGER            Number of seconds to wait for the response
+                               after an HTTP connection is made  [default: 30]
+
+  --retries INTEGER            Number of immediate retries to make if a
+                               connection error occurs  [default: 1]
+
+  --regex TEXT                 A regular expression to search for in the
+                               response
+
+  --frequency-online INTEGER   Number of seconds to wait before checking an
+                               online website again  [default: 300]
+
+  --frequency-offline INTEGER  Number of seconds to wait before checking an
+                               offline website again  [default: 60]
+
+  --kafka-broker TEXT          Name and port for the Kafka broker to send
+                               results to.
+
+  --kafka-topic TEXT           Name of the topic in Kafka
+  --kafka-ssl-cafile FILE      A filename for a CA file for connecting to
+                               Kafka via SSL
+
+  --kafka-ssl-certfile FILE    A filename for a certificate file for
+                               connecting to Kafka via SSL
+
+  --kafka-ssl-keyfile FILE     A filename for a secret keyfile for connecting
+                               to Kafka via SSL
+
+  --websites FILE              A filename for a configuration file with many
+                               websites and custom configuration
+
+  --once                       Only run each check once and exit
+  --help                       Show this message and exit.
+```
 
 All of these options can be provided by environment variables, eg `HTTPCHECK_FREQUENCY_ONLINE=30`.
 
@@ -114,3 +154,23 @@ If you would like to reserve the ability to seamlessly change the URL, you can u
 ```
 
 Note that the Kafka configuration cannot be overriden on a per-website basis, it must be provided on the command line or in environment variables.
+
+## Running in production
+
+The following systemd service definition might be useful.
+It assumes there is a file `/etc/httpcheck/websites.json` which lists the websites and a set of environment variables in /etc/httpcheck/config.
+
+```
+[Unit]
+Description=httpcheck
+
+[Service]
+EnvironmentFile=/etc/httpcheck/config
+Environment="PYTHONUNBUFFERED=1"
+Type=simple
+ExecStart=/usr/local/bin/httpcheck --websites /etc/httpcheck/websites.json
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
