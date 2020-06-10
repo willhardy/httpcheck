@@ -2,7 +2,7 @@ import contextlib
 import dataclasses
 import datetime
 import re
-import time
+import socket
 import timeit
 from typing import Optional
 
@@ -21,10 +21,12 @@ class AttemptLog:
 
     url: str
     timestamp: str = dataclasses.field(default_factory=now_isoformat)
+    hostname: Optional[str] = dataclasses.field(default_factory=socket.getfqdn)
     identifier: Optional[str] = None
     is_online: Optional[bool] = None
     response_time: Optional[float] = None
     status_code: Optional[int] = None
+    regex: Optional[str] = None
     regex_found: Optional[bool] = None
     exception: Optional[Exception] = None
     retries: int = 0
@@ -36,12 +38,15 @@ class AttemptLog:
         self.response_time = timeit.default_timer() - start_time
 
     def process_response(self, response, regex):
+        """ Given a completed response, extract the relevant data. """
         self.status_code = response.status_code
         self.is_online = not response.is_error
         if regex:
+            self.regex = regex
             self.regex_found = bool(re.search(regex, response.text))
 
     def process_exception(self, exception):
+        """ Given a exception from an HTTP request, extract the relevant data. """
         if getattr(exception, "response", None):
             self.process_response(exception.response)
         self.is_online = False
@@ -54,7 +59,6 @@ class HttpMonitor:
 
         self.scheduler_job = None
         self.currently_online = True
-        self.time_of_next_attempt = time.time()
 
     async def make_attempt(self):
         """ Make an attempt to contact the service, returns an AttemptLog. """
@@ -95,18 +99,18 @@ class HttpMonitor:
             return await client.request(self.config.method, self.config.url)
 
     def update_scheduler(self):
-        if self.scheduler_job is None:
-            return
-        self.scheduler_job.reschedule("interval", seconds=self.current_frequency)
+        if self.scheduler_job is not None:
+            self.scheduler_job.reschedule("interval", seconds=self.current_frequency)
 
     def remove_from_scheduler(self):
-        if self.scheduler_job is None:
-            return
-        self.scheduler_job.remove()
+        if self.scheduler_job is not None:
+            self.scheduler_job.remove()
 
     def add_to_scheduler(self, scheduler, publish_fn):
-        # Run immediately and schedule repeats
+        # Run immediately, scheduler is for future attempts
         scheduler.add_job(self.attempt_and_publish, args=[publish_fn])
+
+        # Schedule repeats
         self.scheduler_job = scheduler.add_job(
             self.attempt_and_publish,
             "interval",
@@ -125,7 +129,9 @@ class HttpMonitor:
 
     @property
     def current_frequency(self):
-        if self.currently_online:
-            return self.config.frequency_online
-        else:
-            return self.config.frequency_offline
+        config = self.config
+        return (
+            config.frequency_online
+            if self.currently_online
+            else config.frequency_offline
+        )
