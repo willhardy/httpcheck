@@ -10,6 +10,15 @@ from pykafka.exceptions import SocketDisconnectedError
 logger = logging.getLogger(__name__)
 
 
+@dataclasses.dataclass
+class KafkaConfig:
+    broker: str
+    topic: str
+    ssl_cafile: str
+    ssl_certfile: str
+    ssl_keyfile: str
+
+
 def get_publish_fn(kafka_config):
     if kafka_config.broker:
         return get_publish_fn_kafka(kafka_config)

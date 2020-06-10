@@ -5,8 +5,8 @@ import signal
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from . import publish
-from .config import HttpMonitorConfig
-from .monitor import HttpMonitor
+from .websitemonitor import WebsiteMonitor
+from .websitemonitor import WebsiteMonitorConfig
 
 
 def parse_websites_json(filename):
@@ -16,7 +16,7 @@ def parse_websites_json(filename):
     for key, config in websites_data.items():
         if "url" not in config:
             config["url"] = key
-        yield key, HttpMonitorConfig(**config)
+        yield key, WebsiteMonitorConfig(**config)
 
 
 def monitor_all(monitor_configs, kafka_config, websites_filename, once=False):
@@ -29,7 +29,7 @@ def monitor_all(monitor_configs, kafka_config, websites_filename, once=False):
     monitors = {}
 
     for key, config in all_monitor_configs.items():
-        monitor = HttpMonitor(config)
+        monitor = WebsiteMonitor(config)
         monitors[key] = monitor
 
     if once:
@@ -69,9 +69,9 @@ def monitor_all(monitor_configs, kafka_config, websites_filename, once=False):
             seen.add(key)
 
         for new_key in set(updates) - seen:
-            monitor = HttpMonitor(updates[new_key])
-            monitor.add_to_scheduler(scheduler, publish_fn)
-            monitors[new_key] = monitor
+            website_monitor = WebsiteMonitor(updates[new_key])
+            website_monitor.add_to_scheduler(scheduler, publish_fn)
+            monitors[new_key] = website_monitor
 
     signal.signal(signal.SIGHUP, reload_config)
 

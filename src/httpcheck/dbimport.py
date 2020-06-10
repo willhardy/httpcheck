@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 DDL_FILENAME = pkg_resources.resource_filename("httpcheck", "sql/ddl.sql")
 
 
-def import_to_db(database_dsn, kafka_config):
+def main(database_dsn, kafka_config):
     """ Read from Kafka and write to the database. """
     with get_db_cursor(database_dsn) as cur:
         create_db_schema(cur)

@@ -1,9 +1,9 @@
 import click
+import dbimport
 
-from . import core
-from .config import HttpMonitorConfig
-from .config import KafkaConfig
-from .dbimport import import_to_db
+from . import main
+from .publish import KafkaConfig
+from .websitemonitor import WebsiteMonitorConfig
 
 
 # Here is a preconfigured click Path type
@@ -94,7 +94,7 @@ def httpcheck_main(
 
     monitor_configs = {}
     for url in urls:
-        monitor_config = HttpMonitorConfig(
+        monitor_config = WebsiteMonitorConfig(
             identifier=identifier,
             method=method,
             url=url,
@@ -114,7 +114,7 @@ def httpcheck_main(
         ssl_keyfile=kafka_ssl_keyfile,
     )
 
-    core.monitor_all(monitor_configs, kafka_config, websites, once=once)
+    main.monitor_all(monitor_configs, kafka_config, websites, once=once)
 
 
 def dbimport_cli():
@@ -164,4 +164,4 @@ def dbimport_main(
         ssl_certfile=kafka_ssl_certfile,
         ssl_keyfile=kafka_ssl_keyfile,
     )
-    import_to_db(database_url, kafka_config)
+    dbimport.main(database_url, kafka_config)

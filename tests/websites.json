@@ -1,0 +1,5 @@
+{
+  "https://google.com/": { "frequency_online": 60  },
+  "http://willhardy.com.au": { "frequency_online": 50 },
+  "http://wajsdifoasdfjasdiofjillhardy.com.au": { "frequency_offline": 20, "retries": 3 }
+}

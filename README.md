@@ -39,6 +39,25 @@ $ httpcheck https://one.example.com https://two.example.com --frequency 60
 
 Note that the order of output is not guaranteed to be sorted, but will roughly be ordered by `timestamp` + `response_time`.
 
+
+## Writing to Kafka and importing to a PostgreSQL database
+
+The output will be written to Kafka if the following environment variables are defined (or supplied via command line paramters):
+
+```bash
+HTTPCHECK_KAFKA_BROKER=kafka.example.com:9092
+HTTPCHECK_KAFKA_TOPIC=httpcheck
+HTTPCHECK_KAFKA_SSL_CAFILE=./ca.pem
+HTTPCHECK_KAFKA_SSL_CERTFILE=./service.cert
+HTTPCHECK_KAFKA_SSL_KEYFILE=./service.key
+```
+
+The data can also be written to a PostgreSQL database by defining `DATABASE_URL` (in addition to Kafka configuration) and running:
+
+```bash
+$ httpcheck-dbimport
+```
+
 ## Command line
 
 ```bash
@@ -155,10 +174,22 @@ If you would like to reserve the ability to seamlessly change the URL, you can u
 
 Note that the Kafka configuration cannot be overriden on a per-website basis, it must be provided on the command line or in environment variables.
 
+## Codebase
+
+Everything is in a single Python package, httpcheck. There are only a few modules there:
+
+ * `cli.py`: Defines a command line interface
+ * `main.py`: Contains the main system function `monitor_all()`, which creates the relevant `WebsiteMonitor`s and manages configuration and reloading.
+ * `publish.py`: Contains the Kafka integration, provides the monitor with a function to call to publish the output data
+ * `websitemonitor.py`: The main logic for monitoring a website
+ * `dbimport.py`: A tool to consume the output data from Kafka and import into a database
+
+Basic tests can be found under `tests/` and can be run with `make test`.
+
 ## Running in production
 
 The following systemd service definition might be useful.
-It assumes there is a file `/etc/httpcheck/websites.json` which lists the websites and a set of environment variables in /etc/httpcheck/config.
+It assumes there is a file `/etc/httpcheck/websites.json` which lists the websites and a set of environment variables in `/etc/httpcheck/config`.
 
 ```
 [Unit]
