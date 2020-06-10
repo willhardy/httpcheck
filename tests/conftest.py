@@ -2,8 +2,8 @@ import time
 
 import pytest
 
-from httpcheck import HttpMonitor
-from httpcheck import HttpMonitorConfig
+from httpcheck.config import HttpMonitorConfig
+from httpcheck.monitor import HttpMonitor
 
 
 class TestHttpMonitor(HttpMonitor):

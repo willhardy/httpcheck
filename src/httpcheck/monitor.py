@@ -11,7 +11,8 @@ import httpx
 
 
 def now_isoformat():
-    return datetime.datetime.utcnow().isoformat()
+    now = datetime.datetime.utcnow().isoformat()
+    return f"{now}+00:00"
 
 
 @dataclasses.dataclass

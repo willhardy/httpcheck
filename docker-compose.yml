@@ -1,10 +1,31 @@
 version: '3.7'
 
 services:
-  app:
+  dbimport:
     build: .
     restart: unless-stopped
+    command: /usr/local/bin/httpcheck-dbimport
+    env_file: .env
+    environment:
+      - "DATABASE_URL=postgres://postgres:postgres@db/postgres"
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - db
+  httpcheck:
+    build: .
+    restart: unless-stopped
+    command: /usr/local/bin/httpcheck --websites ./websites.json
+    env_file: .env
     environment:
       - "DEBUG=1"
     volumes:
       - .:/usr/src/app
+  db:
+    image: "postgres:12.2-alpine"
+    volumes:
+      -  pgdata:/var/lib/postgresql/data
+    environment:
+      - "POSTGRES_HOST_AUTH_METHOD=trust"
+volumes:
+  pgdata:

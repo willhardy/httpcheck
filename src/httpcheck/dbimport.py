@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 DDL = [
-    #"DROP TABLE attempts CASCADE;",
     """
     CREATE TABLE IF NOT EXISTS attempts (
         id serial NOT NULL PRIMARY KEY,
@@ -58,10 +57,12 @@ def read_from_kafka(kafka_config):
     client = pykafka.KafkaClient(hosts=kafka_config.broker, ssl_config=ssl_config)
     topic = client.topics[kafka_config.topic]
 
-    consumer = topic.get_simple_consumer(consumer_group='dbimport',
-                                         auto_offset_reset=OffsetType.EARLIEST,
-                                         auto_commit_enable=True,
-                                         reset_offset_on_start=False)
+    consumer = topic.get_simple_consumer(
+        consumer_group="dbimport",
+        auto_offset_reset=OffsetType.EARLIEST,
+        auto_commit_enable=True,
+        reset_offset_on_start=False,
+    )
 
     for message in consumer:
         yield message
@@ -78,12 +79,22 @@ def import_to_db(database_dsn, kafka_config):
         for msg in read_from_kafka(kafka_config):
             data = json.loads(msg.value)
             try:
-                cur.execute("INSERT INTO attempts (url, timestamp, response_time, is_online, "
-                            "status_code, identifier, exception, retries, regex_found) "
-                            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);",
-                            (data['url'], parse_date(data['timestamp']), data['response_time'],
-                             data['is_online'], data['status_code'], data['identifier'] or "",
-                             data['exception'] or "", data['retries'], data['regex_found']))
+                cur.execute(
+                    "INSERT INTO attempts (url, timestamp, response_time, is_online, "
+                    "status_code, identifier, exception, retries, regex_found) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);",
+                    (
+                        data["url"],
+                        parse_date(data["timestamp"]),
+                        data["response_time"],
+                        data["is_online"],
+                        data["status_code"],
+                        data["identifier"] or "",
+                        data["exception"] or "",
+                        data["retries"],
+                        data["regex_found"],
+                    ),
+                )
             except psycopg2.errors.UniqueViolation:
-                logger.exception('Skipping duplicate record')
+                logger.exception("Skipping duplicate record")
             print(cur.query)
