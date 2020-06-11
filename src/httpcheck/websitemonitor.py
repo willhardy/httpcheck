@@ -24,9 +24,10 @@ class WebsiteMonitorConfig:
 
 
 class WebsiteMonitor:
-    def __init__(self, config):
+    def __init__(self, config, config_source=None):
         self.config = config
         self.scheduler_job = None
+        self.config_source = config_source
 
     def add_to_scheduler(self, scheduler, publish_fn):
         # Run immediately, scheduler is for future attempts

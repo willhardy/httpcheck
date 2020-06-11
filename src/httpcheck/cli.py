@@ -1,6 +1,6 @@
 import click
-import dbimport
 
+from . import dbimport
 from . import main
 from .publish import KafkaConfig
 from .websitemonitor import WebsiteMonitorConfig
