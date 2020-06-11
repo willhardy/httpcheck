@@ -4,13 +4,19 @@ default: help
 .PHONY: test
 test:   ## Run test suite
 	touch .env
-	docker-compose run httpcheck pytest tests
+	docker-compose run --rm httpcheck pytest tests
+
+
+.PHONY: system-test
+system-test:   ## Run test suite
+	touch .env
+	docker-compose run --rm httpcheck python3 ./tests/system.py
 
 
 .PHONY: build
 build:  ## Build wheel
 	touch .env
-	docker-compose run httpcheck python ./setup.py bdist_wheel -d build
+	docker-compose run --rm httpcheck python3 ./setup.py bdist_wheel -d build
 
 
 .PHONY: help

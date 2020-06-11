@@ -15,16 +15,14 @@ from .websitemonitor import WebsiteMonitorConfig
 
 
 def monitor_all(monitor_configs, kafka_config, websites_filename, once=False):
-    monitors = {key: WebsiteMonitor(config) for key, config in monitor_configs}
+    monitors = {key: WebsiteMonitor(config) for key, config in monitor_configs.items()}
     monitors.update(parse_websites_json(websites_filename))
-    publish_fn = publish.get_publish_fn(kafka_config)
-
-    monitor_manager = MonitorManager(monitors=monitors, publish_fn=publish_fn)
-
-    if once:
-        monitor_manager.run_once()
-    else:
-        monitor_manager.schedule_all()
+    with publish.get_publish_fn(kafka_config) as publish_fn:
+        monitor_manager = MonitorManager(monitors=monitors, publish_fn=publish_fn)
+        if once:
+            monitor_manager.run_once()
+        else:
+            monitor_manager.schedule_all()
 
 
 @dataclasses.dataclass
@@ -32,8 +30,8 @@ class MonitorManager:
     """ Manage many website monitors at once, connect them to a publisher and scheduler. """
 
     monitors: Dict[str, WebsiteMonitor]
-    scheduler: Optional[BaseScheduler]
     publish_fn: Callable
+    scheduler: Optional[BaseScheduler] = None
 
     def run_once(self):
         asyncio.run(self.async_run_once())

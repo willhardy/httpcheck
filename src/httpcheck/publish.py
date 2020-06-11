@@ -1,3 +1,4 @@
+import contextlib
 import dataclasses
 import json
 import logging
@@ -30,6 +31,7 @@ def serialize_attempt_log(attempt_log):
     return json.dumps(dataclasses.asdict(attempt_log))
 
 
+@contextlib.contextmanager
 def get_publish_fn_kafka(kafka_config):
     if kafka_config.ssl_keyfile:
         ssl_config = pykafka.connection.SslConfig(
@@ -44,7 +46,7 @@ def get_publish_fn_kafka(kafka_config):
     topic = client.topics[kafka_config.topic]
     producer = topic.get_producer(required_acks=0)
 
-    def publish(attempt_log):
+    def publish_fn(attempt_log):
         nonlocal producer
         data = serialize_attempt_log(attempt_log)
         try:
@@ -55,11 +57,17 @@ def get_publish_fn_kafka(kafka_config):
             producer.stop()
             producer.start()
             producer.produce(data.encode("utf8"))
+
         print(data)
 
-    return publish
+    yield publish_fn
+
+    print("Waiting for remaining messages to be sent...")
+    producer.stop()
+    print("Done!")
 
 
+@contextlib.contextmanager
 def get_publish_fn_text(logs):
     publish_fn = lambda attempt_log: print(serialize_attempt_log(attempt_log))
-    return publish_fn
+    yield publish_fn

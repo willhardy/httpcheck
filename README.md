@@ -18,31 +18,20 @@ $ docker-compose run --rm httpcheck httpcheck --help
 
 ## Basic Usage
 
-Run the following command to monitor the URL https://example.com using the default settings:
+In its simplest form, `httpcheck` will monitor the URLs provided and output the results to stdout:.
 
 ```bash
-$ httpcheck https://example.com
-{"url": "https://example.com", "timestamp": "2020-06-08T17:25:03.141592", ...}
-{"url": "https://example.com", "timestamp": "2020-06-08T17:30:02.718281", ...}
-```
-
-Send the `INT` signal (ie type CTRL-C) to stop.
-
-You can provide multiple URLs a number of options to change the behaviour for all monitored websites at once:
-```bash
-$ httpcheck https://one.example.com https://two.example.com --frequency 60
+$ httpcheck https://one.example.com https://two.example.com
 {"url": "https://one.example.com", "timestamp": "2020-06-08T17:25:03.141592", ...}
 {"url": "https://two.example.com", "timestamp": "2020-06-08T17:25:02.718281", ...}
 {"url": "https://two.example.com", "timestamp": "2020-06-08T17:30:02.718281", ...}
 {"url": "https://one.example.com", "timestamp": "2020-06-08T17:30:03.141592", ...}
 ```
 
-Note that the order of output is not guaranteed to be sorted, but will roughly be ordered by `timestamp` + `response_time`.
+Send the `INT` signal (ie type CTRL-C) to stop.
 
-
-## Writing to Kafka and importing to a PostgreSQL database
-
-The output will be written to Kafka if the following environment variables are defined (or supplied via command line paramters):
+To write the output to Kafka, provide `--kafka-broker` and `--kafka-topic`.
+All options can be alternatively provided by environment variables, so a full Kafka configuration would be provided by the following environment variables:
 
 ```bash
 HTTPCHECK_KAFKA_BROKER=kafka.example.com:9092
@@ -52,59 +41,11 @@ HTTPCHECK_KAFKA_SSL_CERTFILE=./service.cert
 HTTPCHECK_KAFKA_SSL_KEYFILE=./service.key
 ```
 
-The data can also be written to a PostgreSQL database by defining `DATABASE_URL` (in addition to Kafka configuration) and running:
+A second entry point is availble that will read the Kafka topic and write to a PostgreSQL database. It requires`DATABASE_URL` to be defined (in addition to Kafka configuration).
 
 ```bash
 $ httpcheck-dbimport
 ```
-
-## Command line
-
-```bash
-Usage: httpcheck [OPTIONS] [URLS]...
-
-Options:
-  --identifier TEXT            A string to be used in the User-Agent header
-                               when making requests.
-
-  --method TEXT                The HTTP method to use  [default: HEAD]
-  --timeout INTEGER            Number of seconds to wait for the response
-                               after an HTTP connection is made  [default: 30]
-
-  --retries INTEGER            Number of immediate retries to make if a
-                               connection error occurs  [default: 1]
-
-  --regex TEXT                 A regular expression to search for in the
-                               response
-
-  --frequency-online INTEGER   Number of seconds to wait before checking an
-                               online website again  [default: 300]
-
-  --frequency-offline INTEGER  Number of seconds to wait before checking an
-                               offline website again  [default: 60]
-
-  --kafka-broker TEXT          Name and port for the Kafka broker to send
-                               results to.
-
-  --kafka-topic TEXT           Name of the topic in Kafka
-  --kafka-ssl-cafile FILE      A filename for a CA file for connecting to
-                               Kafka via SSL
-
-  --kafka-ssl-certfile FILE    A filename for a certificate file for
-                               connecting to Kafka via SSL
-
-  --kafka-ssl-keyfile FILE     A filename for a secret keyfile for connecting
-                               to Kafka via SSL
-
-  --websites FILE              A filename for a configuration file with many
-                               websites and custom configuration
-
-  --once                       Only run each check once and exit
-  --help                       Show this message and exit.
-```
-
-All of these options can be provided by environment variables, eg `HTTPCHECK_FREQUENCY_ONLINE=30`.
-
 
 ## Output
 
@@ -174,34 +115,12 @@ If you would like to reserve the ability to seamlessly change the URL, you can u
 
 Note that the Kafka configuration cannot be overriden on a per-website basis, it must be provided on the command line or in environment variables.
 
-## Codebase
+## Tests
 
-Everything is in a single Python package, httpcheck. There are only a few modules there:
+ * Run the full test suite with `make test` (will build and run inside docker).
+ * Run a system test by defining the relevant Kafka and database configuration in a file called `.env` and calling `make system-test`
 
- * `cli.py`: Defines a command line interface
- * `main.py`: Contains the main system function `monitor_all()`, which creates the relevant `WebsiteMonitor`s and manages configuration and reloading.
- * `publish.py`: Contains the Kafka integration, provides the monitor with a function to call to publish the output data
- * `websitemonitor.py`: The main logic for monitoring a website
- * `dbimport.py`: A tool to consume the output data from Kafka and import into a database
+## More information
 
-Basic tests can be found under `tests/` and can be run with `make test`.
-
-## Running in production
-
-The following systemd service definition might be useful.
-It assumes there is a file `/etc/httpcheck/websites.json` which lists the websites and a set of environment variables in `/etc/httpcheck/config`.
-
-```
-[Unit]
-Description=httpcheck
-
-[Service]
-EnvironmentFile=/etc/httpcheck/config
-Environment="PYTHONUNBUFFERED=1"
-Type=simple
-ExecStart=/usr/local/bin/httpcheck --websites /etc/httpcheck/websites.json
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
+All command line arguments/environment variables are described in `httpcheck --help`.
+Likewise, all available make targets can be listed with `make help`.

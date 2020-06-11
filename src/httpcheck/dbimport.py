@@ -17,9 +17,12 @@ def main(database_dsn, kafka_config):
     """ Read from Kafka and write to the database. """
     with get_db_cursor(database_dsn) as cur:
         create_db_schema(cur)
-        for msg in get_messages_from_kafka(kafka_config):
-            data = json.loads(msg.value)
-            save_data_to_database(data)
+        try:
+            for msg in get_messages_from_kafka(kafka_config):
+                data = json.loads(msg.value)
+                save_data_to_database(cur, data)
+        except (KeyboardInterrupt, SystemExit):
+            pass
 
 
 @contextlib.contextmanager
@@ -80,7 +83,7 @@ def save_data_to_database(cur, data):
 
 
 def print_last_query(cur):
-    query = cur.query.decode("utf8")
+    query = " ".join(cur.query.decode("utf8").split())
     print(f"> {query}")
     print(f"< {cur.statusmessage}")
 
