@@ -7,7 +7,8 @@ A tool to monitor website availability
 Install from this directory using pip:
 
 ```bash
-$ pip install -e .
+$ make build
+$ pip install build/httpcheck-1.0-py3-none-any.whl
 ```
 
 Alternatively, we can run it directly in docker:
