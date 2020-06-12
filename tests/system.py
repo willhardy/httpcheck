@@ -69,8 +69,7 @@ def validate_environment():
     missing_vars = ", ".join(e for e in required_env_vars if e not in os.environ)
     if missing_vars:
         click.secho(
-            "",
-            "Please provide Kafka and postgres configuration in a file called `.env`",
+            "\nPlease provide Kafka and postgres configuration in a file called `.env`\n"
             f"Missing: {missing_vars}",
             err=True,
             fg="red",
