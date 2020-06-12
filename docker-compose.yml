@@ -7,6 +7,8 @@ services:
     command: /usr/local/bin/httpcheck-dbimport
     working_dir: /usr/src/app
     env_file: .env
+    environment:
+      - "LOG_LEVEL=INFO"
     volumes:
       - .:/usr/src/app
   httpcheck:
@@ -16,6 +18,6 @@ services:
     command: /usr/local/bin/httpcheck --websites ./websites.json
     env_file: .env
     environment:
-      - "DEBUG=1"
+      - "LOG_LEVEL=INFO"
     volumes:
       - .:/usr/src/app

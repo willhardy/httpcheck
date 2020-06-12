@@ -1,3 +1,6 @@
+import logging
+import os
+
 import click
 
 from . import dbimport
@@ -65,6 +68,8 @@ def httpcheck_main(
     kafka_ssl_keyfile,
     once,
 ):
+    set_log_level_from_environment()
+
     monitor_configs = {}
     for url in urls:
         monitor_config = WebsiteMonitorConfig(
@@ -120,6 +125,8 @@ def dbimport_main(
     kafka_ssl_certfile,
     kafka_ssl_keyfile,
 ):
+    set_log_level_from_environment()
+
     kafka_config = dbimport.KafkaConfig(
         broker=kafka_broker,
         topic=kafka_topic,
@@ -128,3 +135,10 @@ def dbimport_main(
         ssl_keyfile=kafka_ssl_keyfile,
     )
     dbimport.main(database_url, kafka_config)
+
+
+def set_log_level_from_environment():
+    valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+    level = os.environ.get("LOG_LEVEL", "").upper()
+    if level in valid_levels:
+        logging.basicConfig(level=level)
