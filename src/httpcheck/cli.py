@@ -2,6 +2,7 @@ import click
 
 from . import dbimport
 from . import main
+from .decorators import help_messages
 from .publish import KafkaConfig
 from .websitemonitor import WebsiteMonitorConfig
 
@@ -14,66 +15,40 @@ def httpcheck_cli():
     httpcheck_main(auto_envvar_prefix="HTTPCHECK")
 
 
+@help_messages(
+    {
+        "identifier": "A string for the User-Agent header when making requests",
+        "method": "The HTTP method to use",
+        "timeout": "Number of seconds to wait for the HTTP response",
+        "retries": "Number of immediate retries when HTTP connection fails",
+        "regex": "A regular expression to search for in the response",
+        "frequency_online": "Seconds to wait before re-checking an online website",
+        "frequency_offline": "Seconds to wait before re-checking an offline website",
+        "kafka_broker": "Name and port for the Kafka broker to send results to",
+        "kafka_topic": "Name of the topic in Kafka",
+        "kafka_ssl_cafile": "Filename for a CA file (Kafka SSL auth)",
+        "kafka_ssl_certfile": "Filename for a certificate file (Kafka SSL auth)",
+        "kafka_ssl_keyfile": "Filename for a secret (Kafka SSL auth)",
+        "websites": "Filename for a JSON file multiple website configuration",
+        "once": "Only run the check once for each website, do not monitor",
+    }
+)
 @click.command()
 @click.argument("urls", nargs=-1)
-@click.option(
-    "--identifier",
-    default="",
-    help="A string to be used in the User-Agent header when making requests.",
-)
-@click.option(
-    "--method", default="HEAD", show_default=True, help="The HTTP method to use"
-)
-@click.option(
-    "--timeout",
-    default=30,
-    show_default=True,
-    help="Number of seconds to wait for the response after an HTTP connection is made",
-)
-@click.option(
-    "--retries",
-    default=1,
-    show_default=True,
-    help="Number of immediate retries to make if a connection error occurs",
-)
-@click.option("--regex", help="A regular expression to search for in the response")
-@click.option(
-    "--frequency-online",
-    default=300,
-    show_default=True,
-    help="Number of seconds to wait before checking an online website again",
-)
-@click.option(
-    "--frequency-offline",
-    default=60,
-    show_default=True,
-    help="Number of seconds to wait before checking an offline website again",
-)
-@click.option(
-    "--kafka-broker", help="Name and port for the Kafka broker to send results to."
-)
-@click.option("--kafka-topic", help="Name of the topic in Kafka")
-@click.option(
-    "--kafka-ssl-cafile",
-    type=FilePath,
-    help="A filename for a CA file for connecting to Kafka via SSL",
-)
-@click.option(
-    "--kafka-ssl-certfile",
-    type=FilePath,
-    help="A filename for a certificate file for connecting to Kafka via SSL",
-)
-@click.option(
-    "--kafka-ssl-keyfile",
-    type=FilePath,
-    help="A filename for a secret keyfile for connecting to Kafka via SSL",
-)
-@click.option(
-    "--websites",
-    type=FilePath,
-    help="A filename for a configuration file with many websites and custom configuration",
-)
-@click.option("--once", is_flag=True, help="Only run each check once and exit")
+@click.option("--identifier", default="")
+@click.option("--method", default="HEAD")
+@click.option("--timeout", default=30)
+@click.option("--retries", default=1)
+@click.option("--regex",)
+@click.option("--frequency-online", default=300)
+@click.option("--frequency-offline", default=60)
+@click.option("--kafka-broker",)
+@click.option("--kafka-topic")
+@click.option("--kafka-ssl-cafile", type=FilePath)
+@click.option("--kafka-ssl-certfile", type=FilePath)
+@click.option("--kafka-ssl-keyfile", type=FilePath)
+@click.option("--websites", type=FilePath)
+@click.option("--once", is_flag=True)
 def httpcheck_main(
     urls,
     identifier,
@@ -121,34 +96,23 @@ def dbimport_cli():
     dbimport_main(auto_envvar_prefix="HTTPCHECK")
 
 
+@help_messages(
+    {
+        "database_url": "DSN for connecting to the database",
+        "kafka_broker": "Name and port for the Kafka broker to send results to",
+        "kafka_topic": "Name of the topic in Kafka",
+        "kafka_ssl_cafile": "Filename for a CA file (Kafka SSL auth)",
+        "kafka_ssl_certfile": "Filename for a certificate file (Kafka SSL auth)",
+        "kafka_ssl_keyfile": "Filename for a secret (Kafka SSL auth)",
+    }
+)
 @click.command()
-@click.option(
-    "--database-url",
-    help="DSN for connecting to the database",
-    envvar="DATABASE_URL",
-    required=True,
-)
-@click.option(
-    "--kafka-broker",
-    help="Name and port for the Kafka broker to send results to.",
-    required=True,
-)
-@click.option("--kafka-topic", help="Name of the topic in Kafka", required=True)
-@click.option(
-    "--kafka-ssl-cafile",
-    type=FilePath,
-    help="A filename for a CA file for connecting to Kafka via SSL",
-)
-@click.option(
-    "--kafka-ssl-certfile",
-    type=FilePath,
-    help="A filename for a certificate file for connecting to Kafka via SSL",
-)
-@click.option(
-    "--kafka-ssl-keyfile",
-    type=FilePath,
-    help="A filename for a secret keyfile for connecting to Kafka via SSL",
-)
+@click.option("--database-url", envvar="DATABASE_URL", required=True)
+@click.option("--kafka-broker", required=True)
+@click.option("--kafka-topic", required=True)
+@click.option("--kafka-ssl-cafile", type=FilePath)
+@click.option("--kafka-ssl-certfile", type=FilePath)
+@click.option("--kafka-ssl-keyfile", type=FilePath)
 def dbimport_main(
     database_url,
     kafka_broker,
