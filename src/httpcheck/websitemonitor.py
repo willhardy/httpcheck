@@ -1,6 +1,7 @@
 import contextlib
 import dataclasses
 import datetime
+import json
 import re
 import socket
 import timeit
@@ -29,16 +30,16 @@ class WebsiteMonitor:
         self.scheduler_job = None
         self.config_source = config_source
 
-    def add_to_scheduler(self, scheduler, publish_fn):
+    def add_to_scheduler(self, scheduler, publisher):
         # Run immediately, scheduler is for future attempts
-        scheduler.add_job(self.attempt_and_publish, args=[publish_fn])
+        scheduler.add_job(self.attempt_and_publish, args=[publisher])
 
         # Schedule repeats
         self.scheduler_job = scheduler.add_job(
             self.attempt_and_publish,
             "interval",
             seconds=self.config.frequency_online,
-            args=[publish_fn],
+            args=[publisher],
             id=self.config.url,
         )
 
@@ -55,10 +56,11 @@ class WebsiteMonitor:
         if self.scheduler_job is not None:
             self.scheduler_job.remove()
 
-    async def attempt_and_publish(self, publish_fn):
+    async def attempt_and_publish(self, publisher):
         check = await self.make_attempt()
         self.update_scheduler(check.is_online)
-        publish_fn(check)
+        data = json.dumps(dataclasses.asdict(check))
+        publisher.publish(data)
 
     async def make_attempt(self):
         check = WebsiteCheck(
@@ -86,6 +88,8 @@ def now_isoformat():
 
 @dataclasses.dataclass
 class WebsiteCheck:
+    """ Run and record the results for a single website check. """
+
     url: str
     timestamp: str = dataclasses.field(default_factory=now_isoformat)
     hostname: Optional[str] = dataclasses.field(default_factory=socket.getfqdn)

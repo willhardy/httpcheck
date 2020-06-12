@@ -22,7 +22,9 @@ def system_test():
     identifier1 = get_random_identifier()
     identifier2 = get_random_identifier()
 
-    # Call httpcheck with two urls; one defined on the command line, one in a websites JSON
+    # Configure and run httpcheck to monitor two urls;
+    #    * one online website defined on command line, every 5s
+    #    * one offline website in websites JSON, every 9s
     with tempfile.NamedTemporaryFile("w+") as websites_json:
         url = "http://example.com"
         url_offline = "https://expired.badssl.com/"
@@ -39,7 +41,7 @@ def system_test():
         )
 
     # Import the data into the database
-    run("httpcheck-dbimport", timeout=5)
+    run("httpcheck-dbimport", timeout=10)
 
     # Check the items arrived in the database
     records = get_results_from_database(identifier1)
@@ -66,12 +68,12 @@ def validate_environment():
     ]
     missing_vars = ", ".join(e for e in required_env_vars if e not in os.environ)
     if missing_vars:
-        msg = (
-            "\n"
-            f"Please provide Kafka and database configuration in a file called `.env`.\n"
-            f"Missing: {missing_vars}\n"
+        print(
+            "",
+            "Please provide Kafka and postgres configuration in a file called `.env`",
+            f"Missing: {missing_vars}",
+            file=sys.stderr,
         )
-        print(msg, file=sys.stderr)
         sys.exit(1)
 
 

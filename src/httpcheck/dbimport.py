@@ -1,4 +1,5 @@
 import contextlib
+import dataclasses
 import datetime
 import json
 import logging
@@ -23,6 +24,15 @@ def main(database_dsn, kafka_config):
                 save_data_to_database(cur, data)
         except (KeyboardInterrupt, SystemExit):
             pass
+
+
+@dataclasses.dataclass
+class KafkaConfig:
+    broker: str
+    topic: str
+    ssl_cafile: str
+    ssl_certfile: str
+    ssl_keyfile: str
 
 
 @contextlib.contextmanager

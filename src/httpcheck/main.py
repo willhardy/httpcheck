@@ -2,23 +2,22 @@ import asyncio
 import dataclasses
 import json
 import signal
-from typing import Callable
 from typing import Dict
 from typing import Optional
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.schedulers.base import BaseScheduler
 
-from . import publish
+from . import publishers
 from .websitemonitor import WebsiteMonitor
 from .websitemonitor import WebsiteMonitorConfig
 
 
-def monitor_all(monitor_configs, kafka_config, websites_filename, once=False):
+def monitor_all(monitor_configs, publisher_config, websites_filename, once=False):
     monitors = {key: WebsiteMonitor(config) for key, config in monitor_configs.items()}
     monitors.update(parse_websites_json(websites_filename))
-    with publish.get_publish_fn(kafka_config) as publish_fn:
-        monitor_manager = MonitorManager(monitors=monitors, publish_fn=publish_fn)
+    with publishers.get_publisher(publisher_config) as publisher:
+        monitor_manager = MonitorManager(monitors=monitors, publisher=publisher)
         if once:
             monitor_manager.run_once()
         else:
@@ -27,10 +26,11 @@ def monitor_all(monitor_configs, kafka_config, websites_filename, once=False):
 
 @dataclasses.dataclass
 class MonitorManager:
-    """ Manage many website monitors at once, connect them to a publisher and scheduler. """
+    """ Manage many website monitors at once, connect them to a publisher and scheduler.
+    """
 
     monitors: Dict[str, WebsiteMonitor]
-    publish_fn: Callable
+    publisher: publishers.BasePublisher
     scheduler: Optional[BaseScheduler] = None
 
     def run_once(self):
@@ -38,7 +38,7 @@ class MonitorManager:
 
     async def async_run_once(self):
         coroutines = (
-            monitor.attempt_and_publish(self.publish_fn)
+            monitor.attempt_and_publish(self.publisher)
             for monitor in self.monitors.values()
         )
         await asyncio.gather(*coroutines)
@@ -46,7 +46,7 @@ class MonitorManager:
     def schedule_all(self):
         self.scheduler = AsyncIOScheduler()
         for monitor in self.monitors.values():
-            monitor.add_to_scheduler(self.scheduler, self.publish_fn)
+            monitor.add_to_scheduler(self.scheduler, self.publisher)
         self.scheduler.start()
 
         signal.signal(signal.SIGHUP, self.reload_config)
@@ -57,34 +57,37 @@ class MonitorManager:
             pass
 
     def reload_config(self, signum, frame):
-        """ Reload any changes to the configuration file. """
+        """ Reload any changes to the configuration file.
+
+        This provides the ability to reload a changed config file while still
+        running, avoiding any extra attempts that might happen on a restart.
+        """
         monitor_updates = {}
-        for filename in (
-            m.config_source for m in self.monitors.values() if m.config_source
-        ):
+
+        filenames = (m.config_source for m in self.monitors.values() if m.config_source)
+        for filename in filenames:
             monitor_updates.update(parse_websites_json(filename))
 
         if not monitor_updates:
             return
 
         for key, monitor in self.monitors.items():
-            # Leave monitors that weren't in the websites file alone
+            # Leave explicitly configured monitors alone
             if monitor.config_source is None:
-                pass
-            elif key in monitor_updates:
-                monitor = self.monitors[key]
-                monitor.config = monitor_updates[self.monitor.config.url]
+                continue
+
+            if key in monitor_updates:
+                monitor.config = monitor_updates[key]
                 monitor.update_scheduler()
             else:
-                monitor = self.monitors[key]
                 monitor.remove_from_scheduler()
                 del self.monitors[key]
 
         new_keys = set(monitor_updates) - set(self.monitors)
         for new_key in new_keys:
-            website_monitor = WebsiteMonitor(monitor_updates[new_key])
-            website_monitor.add_to_scheduler(self.scheduler, self.publish_fn)
-            self.monitors[new_key] = website_monitor
+            new_monitor = WebsiteMonitor(monitor_updates[new_key])
+            new_monitor.add_to_scheduler(self.scheduler, self.publisher)
+            self.monitors[new_key] = new_monitor
 
 
 def parse_websites_json(filename):

@@ -3,7 +3,6 @@ import click
 from . import dbimport
 from . import main
 from .decorators import help_messages
-from .publish import KafkaConfig
 from .websitemonitor import WebsiteMonitorConfig
 
 
@@ -81,15 +80,16 @@ def httpcheck_main(
         )
         monitor_configs[url] = monitor_config
 
-    kafka_config = KafkaConfig(
-        broker=kafka_broker,
-        topic=kafka_topic,
-        ssl_cafile=kafka_ssl_cafile,
-        ssl_certfile=kafka_ssl_certfile,
-        ssl_keyfile=kafka_ssl_keyfile,
-    )
+    publisher_config = {
+        "backend": "kafka" if kafka_broker else "console",
+        "broker": kafka_broker,
+        "topic": kafka_topic,
+        "ssl_cafile": kafka_ssl_cafile,
+        "ssl_certfile": kafka_ssl_certfile,
+        "ssl_keyfile": kafka_ssl_keyfile,
+    }
 
-    main.monitor_all(monitor_configs, kafka_config, websites, once=once)
+    main.monitor_all(monitor_configs, publisher_config, websites, once=once)
 
 
 def dbimport_cli():
@@ -121,7 +121,7 @@ def dbimport_main(
     kafka_ssl_certfile,
     kafka_ssl_keyfile,
 ):
-    kafka_config = KafkaConfig(
+    kafka_config = dbimport.KafkaConfig(
         broker=kafka_broker,
         topic=kafka_topic,
         ssl_cafile=kafka_ssl_cafile,
