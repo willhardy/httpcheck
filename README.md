@@ -13,6 +13,7 @@ $ pip install -e .
 Alternatively, we can run it directly in docker:
 
 ```bash
+$ touch .env
 $ docker-compose run --rm httpcheck httpcheck --help
 ```
 
