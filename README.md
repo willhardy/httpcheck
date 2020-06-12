@@ -70,7 +70,7 @@ For example:
 
 ```json
 {
-  "url": "https://example.com,
+  "url": "https://example.com",
   "timestamp": "2020-06-08T17:25:23.102321",
   "identifier": "eu-west-1",
   "is_online": true,
