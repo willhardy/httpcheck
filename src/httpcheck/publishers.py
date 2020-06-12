@@ -51,7 +51,7 @@ class ConsolePublisher(BasePublisher):
     key = "console"
 
     def publish(data):
-        print(data)
+        print(data, flush=True)
 
 
 class KafkaPublisher(BasePublisher):
@@ -81,14 +81,12 @@ class KafkaPublisher(BasePublisher):
             self._producer.start()
             self._producer.produce(data.encode("utf8"))
 
-        print(data)
+        print(data, flush=True)
 
     def close(self):
-        print(
-            "Waiting for remaining messages to be sent to Kafka...", end="", flush=True
-        )
+        logger.info("Waiting for all messages to be sent to Kafka...")
         self._producer.stop()
-        print("Done!")
+        logger.info("Done!")
 
     def _get_kafka_client(self):
         if self.config.ssl_keyfile:

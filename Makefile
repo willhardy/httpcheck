@@ -2,22 +2,22 @@ default: help
 
 
 .PHONY: test
-test:   ## Run test suite
-	touch .env
+test: .env  ## Run test suite
 	docker-compose run --rm httpcheck pytest tests
 
 
 .PHONY: system-test
-system-test:   ## Run test suite
-	touch .env
+system-test: .env  ## Run test suite
 	docker-compose run --rm httpcheck python3 ./tests/system.py
 
 
 .PHONY: build
-build:  ## Build wheel
-	touch .env
+build: .env  ## Build wheel
 	docker-compose run --rm httpcheck python3 ./setup.py bdist_wheel -d build
 
+
+.env:
+	touch .env
 
 .PHONY: help
 help:  ## Display this help message

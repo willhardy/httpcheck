@@ -68,11 +68,12 @@ def validate_environment():
     ]
     missing_vars = ", ".join(e for e in required_env_vars if e not in os.environ)
     if missing_vars:
-        print(
+        click.secho(
             "",
             "Please provide Kafka and postgres configuration in a file called `.env`",
             f"Missing: {missing_vars}",
-            file=sys.stderr,
+            err=True,
+            fg="red",
         )
         sys.exit(1)
 
@@ -84,7 +85,7 @@ def get_random_identifier():
 
 def run(cmd_str, timeout):
     cmd = cmd_str.split()
-    print(f"Running {cmd_str}\n(timeout in {timeout}s...)")
+    click.secho(f"Running {cmd_str}\n(timeout in {timeout}s...)", fg="yellow")
     proc = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf8"
     )
@@ -92,17 +93,22 @@ def run(cmd_str, timeout):
     try:
         stdout, stderr = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
-        print("Time over, sending SIGINT")
+        click.secho("Time over, sending SIGINT", fg="yellow")
         proc.send_signal(signal.SIGINT)
         stdout, stderr = proc.communicate()
 
     if proc.returncode not in (0,):
-        print(f"Call to {cmd_str} failed: exit {proc.returncode}")
-        print(f"\nSTDOUT:\n{stdout}")
-        print(f"\nSTDERR:\n{stderr}")
+        click.secho(f"Call to {cmd_str} failed: exit {proc.returncode}", fg="red")
+        click.secho("\nSTDOUT:", fg="red")
+        click.secho(stdout)
+        click.secho("\nSTDERR:", fg="red")
+        click.secho(stderr)
         sys.exit(1)
     else:
-        print(f"\nSTDOUT:\n{stdout}")
+        click.secho("\nSTDOUT:", fg="yellow")
+        click.secho(stdout)
+        click.secho("\nSTDERR:", fg="yellow")
+        click.secho(stderr)
 
 
 def get_results_from_database(identifier):

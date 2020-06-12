@@ -65,7 +65,6 @@ def httpcheck_main(
     kafka_ssl_keyfile,
     once,
 ):
-
     monitor_configs = {}
     for url in urls:
         monitor_config = WebsiteMonitorConfig(

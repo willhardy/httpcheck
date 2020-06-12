@@ -94,8 +94,8 @@ def save_data_to_database(cur, data):
 
 def print_last_query(cur):
     query = " ".join(cur.query.decode("utf8").split())
-    print(f"> {query}")
-    print(f"< {cur.statusmessage}")
+    logger.info(f"> {query}")
+    logger.info(f"< {cur.statusmessage}")
 
 
 def get_kafka_consumer(kafka_config):

@@ -59,6 +59,7 @@ The JSON object will have the following keys:
  * `timestamp` The date/time that the attempt was started (a string in ISO-8601)
  * `identifier` The identifier provided in the configuration and used in the User-Agent header
  * `is_online` This is `true` if the website is contactable and responds with a non-error HTTP status
+ * `regex` The regular expression that was configured, if any.
  * `regex_found` This is `true` if the configured regular expression was found. `false` if it was not found, `null` if no regex was configured.
  * `response_time` The time taken to receive the response, in seconds .
  * `status_code` The status code returned by the website.
@@ -73,11 +74,12 @@ For example:
   "timestamp": "2020-06-08T17:25:23.102321",
   "identifier": "eu-west-1",
   "is_online": true,
+  "regex": "example",
   "regex_found": true,
   "response_time": 1.41421356,
   "status_code": 200,
   "exception": null,
-  "retries": 0,
+  "retries": 0
 }
 ```
 
