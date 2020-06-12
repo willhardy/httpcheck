@@ -5,12 +5,14 @@ services:
     build: .
     restart: unless-stopped
     command: /usr/local/bin/httpcheck-dbimport
+    working_dir: /usr/src/app
     env_file: .env
     volumes:
       - .:/usr/src/app
   httpcheck:
     build: .
     restart: unless-stopped
+    working_dir: /usr/src/app
     command: /usr/local/bin/httpcheck --websites ./websites.json
     env_file: .env
     environment:
