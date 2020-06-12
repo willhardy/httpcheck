@@ -50,7 +50,7 @@ class BasePublisher:
 class ConsolePublisher(BasePublisher):
     key = "console"
 
-    def publish(data):
+    def publish(self, data):
         print(data, flush=True)
 
 
