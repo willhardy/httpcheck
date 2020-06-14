@@ -38,18 +38,18 @@ class WebsiteMonitor:
         return self.config.frequency
 
     async def attempt_and_publish(self, publisher):
-        check = await self.make_attempt()
-        data = json.dumps(dataclasses.asdict(check))
+        check_results = await self.make_attempt()
+        data = json.dumps(dataclasses.asdict(check_results))
         publisher.publish(data)
 
     async def make_attempt(self):
-        check = WebsiteCheck(
+        check_results = WebsiteCheckResults(
             url=self.config.url,
             identifier=self.config.identifier,
             regex=self.config.regex,
         )
-        await check.run(self.make_http_request, self.config.retries)
-        return check
+        await check_results.run(self.make_http_request, self.config.retries)
+        return check_results
 
     async def make_http_request(self):
         _timeout = httpx.Timeout(
@@ -67,7 +67,7 @@ def now_isoformat():
 
 
 @dataclasses.dataclass
-class WebsiteCheck:
+class WebsiteCheckResults:
     """ Run and record the results for a single website check. """
 
     url: str
