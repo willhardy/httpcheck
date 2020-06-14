@@ -5,6 +5,7 @@ import signal
 from typing import Dict
 from typing import Optional
 
+from apscheduler.jobstores.base import JobLookupError
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.schedulers.base import BaseScheduler
 
@@ -28,14 +29,15 @@ def monitor_all(monitor_configs, publisher_config, websites_filename, once=False
 class SchedulerFacade:
     scheduler: BaseScheduler
     publisher: publishers.BasePublisher
-    _scheduled_jobs: Dict = dataclasses.field(default_factory=dict)
 
     def start(self):
         self.scheduler.start()
 
+    def get_job_id(self, website_monitor):
+        return f"httpcheck:{website_monitor.key}"
+
     def schedule(self, website_monitor):
-        if website_monitor.key in self._scheduled_jobs:
-            self.unschedule(website_monitor)
+        job_id = self.get_job_id(website_monitor)
 
         # Run immediately, AsyncScheduler does not start with an immediate job
         self.scheduler.add_job(
@@ -43,24 +45,30 @@ class SchedulerFacade:
         )
 
         # Schedule repeats
-        self._scheduled_jobs[website_monitor.key] = self.scheduler.add_job(
+        self.scheduler.add_job(
             website_monitor.attempt_and_publish,
-            "interval",
+            trigger="interval",
             seconds=website_monitor.frequency,
             args=[self.publisher],
+            id=job_id,
+            replace_existing=True,
         )
 
     def reschedule(self, website_monitor):
-        if website_monitor.key not in self._scheduled_jobs:
+        job_id = self.get_job_id(website_monitor)
+        try:
+            self.scheduler.reschedule_job(
+                job_id, trigger="interval", seconds=website_monitor.frequency
+            )
+        except JobLookupError:
             self.schedule(website_monitor)
-            return
-
-        existing_job = self._scheduled_jobs[website_monitor.key]
-        existing_job.reschedule("interval", seconds=website_monitor.frequency)
 
     def unschedule(self, website_monitor):
-        if website_monitor.key in self._scheduled_jobs:
-            self._scheduled_jobs[website_monitor.key].remove()
+        job_id = self.get_job_id(website_monitor)
+        try:
+            self.scheduler.remove_job(job_id)
+        except JobLookupError:
+            pass
 
 
 @dataclasses.dataclass
