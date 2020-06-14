@@ -24,8 +24,7 @@ def httpcheck_cli():
         "timeout": "Number of seconds to wait for the HTTP response",
         "retries": "Number of immediate retries when HTTP connection fails",
         "regex": "A regular expression to search for in the response",
-        "frequency_online": "Seconds to wait before re-checking an online website",
-        "frequency_offline": "Seconds to wait before re-checking an offline website",
+        "frequency": "Seconds to wait before re-checking website",
         "kafka_broker": "Name and port for the Kafka broker to send results to",
         "kafka_topic": "Name of the topic in Kafka",
         "kafka_ssl_cafile": "Filename for a CA file (Kafka SSL auth)",
@@ -42,8 +41,7 @@ def httpcheck_cli():
 @click.option("--timeout", default=30)
 @click.option("--retries", default=1)
 @click.option("--regex",)
-@click.option("--frequency-online", default=300)
-@click.option("--frequency-offline", default=60)
+@click.option("--frequency", default=300)
 @click.option("--kafka-broker",)
 @click.option("--kafka-topic")
 @click.option("--kafka-ssl-cafile", type=FilePath)
@@ -58,8 +56,7 @@ def httpcheck_main(
     timeout,
     retries,
     regex,
-    frequency_online,
-    frequency_offline,
+    frequency,
     websites,
     kafka_broker,
     kafka_topic,
@@ -79,8 +76,7 @@ def httpcheck_main(
             timeout_read=timeout,
             retries=retries,
             regex=regex,
-            frequency_online=frequency_online,
-            frequency_offline=frequency_offline,
+            frequency=frequency,
         )
         monitor_configs[url] = monitor_config
 
