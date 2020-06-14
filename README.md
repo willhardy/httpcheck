@@ -94,8 +94,8 @@ Here is an example JSON file that can be used to setup two websites to be monito
 
 ```json
 {
-  "https://example.com/health1": { "frequency_online": 300  },
-  "https://example.com/health2": { "frequency_online": 120, "frequency_offline": 30 }
+  "https://example.com/health1": { "frequency": 300 },
+  "https://example.com/health2": { "frequency": 120 }
 }
 ```
 
@@ -112,8 +112,8 @@ If you would like to reserve the ability to seamlessly change the URL, you can u
 
 ```json
 {
-  "one": {"url": "https://example.com/health1", "frequency_online": 300  },
-  "two": {"url": "https://example.com/health2", "frequency_online": 120, "frequency_offline": 30 }
+  "one": {"url": "https://example.com/health1", "frequency": 300 },
+  "two": {"url": "https://example.com/health2", "frequency": 120 }
 }
 ```
 

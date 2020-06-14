@@ -14,51 +14,31 @@ import httpx
 @dataclasses.dataclass
 class WebsiteMonitorConfig:
     url: str
+    key: Optional[str] = None
     timeout_connect: int = 5  # seconds
     timeout_read: int = 30  # seconds
     identifier: str = ""
     method: str = "HEAD"
     retries: int = 1
     regex: Optional[str] = None
-    frequency_online: int = 300  # seconds
-    frequency_offline: int = 60  # seconds
+    frequency: int = 300  # seconds
 
 
 class WebsiteMonitor:
     def __init__(self, config, config_source=None):
         self.config = config
-        self.scheduler_job = None
         self.config_source = config_source
 
-    def add_to_scheduler(self, scheduler, publisher):
-        # Run immediately, scheduler is for future attempts
-        scheduler.add_job(self.attempt_and_publish, args=[publisher])
+    @property
+    def key(self):
+        return self.config.key or self.config.url
 
-        # Schedule repeats
-        self.scheduler_job = scheduler.add_job(
-            self.attempt_and_publish,
-            "interval",
-            seconds=self.config.frequency_online,
-            args=[publisher],
-            id=self.config.url,
-        )
-
-    def update_scheduler(self, currently_online):
-        if self.scheduler_job is not None:
-            if currently_online:
-                freq = self.config.frequency_online
-            else:
-                freq = self.config.frequency_offline
-
-            self.scheduler_job.reschedule("interval", seconds=freq)
-
-    def remove_from_scheduler(self):
-        if self.scheduler_job is not None:
-            self.scheduler_job.remove()
+    @property
+    def frequency(self):
+        return self.config.frequency
 
     async def attempt_and_publish(self, publisher):
         check = await self.make_attempt()
-        self.update_scheduler(check.is_online)
         data = json.dumps(dataclasses.asdict(check))
         publisher.publish(data)
 
@@ -124,7 +104,7 @@ class WebsiteCheck:
         self.exception = type(exception).__name__
 
     async def run(self, get_response, retries):
-        """ Observer and log the attempt """
+        """ Make the attempt and log the results """
         total_attempts = 1 + retries
 
         for retry_idx in range(total_attempts):

@@ -19,9 +19,48 @@ def monitor_all(monitor_configs, publisher_config, websites_filename, once=False
     with publishers.get_publisher(publisher_config) as publisher:
         monitor_manager = MonitorManager(monitors=monitors, publisher=publisher)
         if once:
-            monitor_manager.run_once()
+            monitor_manager.run_all_monitors_once()
         else:
-            monitor_manager.schedule_all()
+            monitor_manager.schedule_all_monitors()
+
+
+@dataclasses.dataclass
+class SchedulerFacade:
+    scheduler: BaseScheduler
+    publisher: publishers.BasePublisher
+    _scheduled_jobs: Dict = dataclasses.field(default_factory=dict)
+
+    def start(self):
+        self.scheduler.start()
+
+    def schedule(self, website_monitor):
+        if website_monitor.key in self._scheduled_jobs:
+            self.unschedule(website_monitor)
+
+        # Run immediately, AsyncScheduler does not start with an immediate job
+        self.scheduler.add_job(
+            website_monitor.attempt_and_publish, args=[self.publisher]
+        )
+
+        # Schedule repeats
+        self._scheduled_jobs[website_monitor.key] = self.scheduler.add_job(
+            website_monitor.attempt_and_publish,
+            "interval",
+            seconds=website_monitor.frequency,
+            args=[self.publisher],
+        )
+
+    def reschedule(self, website_monitor):
+        if website_monitor.key not in self._scheduled_jobs:
+            self.schedule(website_monitor)
+            return
+
+        existing_job = self._scheduled_jobs[website_monitor.key]
+        existing_job.reschedule("interval", seconds=website_monitor.frequency)
+
+    def unschedule(self, website_monitor):
+        if website_monitor.key in self._scheduled_jobs:
+            self._scheduled_jobs[website_monitor.key].remove()
 
 
 @dataclasses.dataclass
@@ -31,22 +70,25 @@ class MonitorManager:
 
     monitors: Dict[str, WebsiteMonitor]
     publisher: publishers.BasePublisher
-    scheduler: Optional[BaseScheduler] = None
+    scheduler: Optional[any] = None
 
-    def run_once(self):
-        asyncio.run(self.async_run_once())
+    def run_all_monitors_once(self):
+        asyncio.run(self.async_run_all_monitors_once())
 
-    async def async_run_once(self):
+    async def async_run_all_monitors_once(self):
         coroutines = (
             monitor.attempt_and_publish(self.publisher)
             for monitor in self.monitors.values()
         )
         await asyncio.gather(*coroutines)
 
-    def schedule_all(self):
-        self.scheduler = AsyncIOScheduler()
+    def schedule_all_monitors(self):
+        assert not self.scheduler
+        self.scheduler = SchedulerFacade(
+            scheduler=AsyncIOScheduler(), publisher=self.publisher
+        )
         for monitor in self.monitors.values():
-            monitor.add_to_scheduler(self.scheduler, self.publisher)
+            self.scheduler.schedule(monitor)
         self.scheduler.start()
 
         signal.signal(signal.SIGHUP, self.reload_config)
@@ -78,9 +120,9 @@ class MonitorManager:
 
             if key in monitor_updates:
                 monitor.config = monitor_updates[key]
-                monitor.update_scheduler()
+                self.scheduler.reschedule(monitor)
             else:
-                monitor.remove_from_scheduler()
+                self.scheduler.unschedule(monitor)
                 del self.monitors[key]
 
         new_keys = set(monitor_updates) - set(self.monitors)

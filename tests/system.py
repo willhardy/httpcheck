@@ -29,13 +29,13 @@ def system_test():
         url = "http://example.com"
         url_offline = "https://expired.badssl.com/"
         offline_website_conf = {
-            url_offline: {"identifier": identifier2, "frequency_offline": 9}
+            url_offline: {"identifier": identifier2, "frequency": 9}
         }
         json.dump(offline_website_conf, websites_json)
         websites_json.flush()
 
         run(
-            f"httpcheck {url} --identifier={identifier1} --frequency-online=5"
+            f"httpcheck {url} --identifier={identifier1} --frequency=5"
             f" --websites={websites_json.name}",
             timeout=14,
         )
@@ -69,7 +69,9 @@ def validate_environment():
     missing_vars = ", ".join(e for e in required_env_vars if e not in os.environ)
     if missing_vars:
         click.secho(
-            "\nPlease provide Kafka and postgres configuration in a file called `.env`\n"
+            "\n"
+            "Please provide Kafka and postgres configuration in a file called `.env`\n"
+            ""
             f"Missing: {missing_vars}",
             err=True,
             fg="red",
