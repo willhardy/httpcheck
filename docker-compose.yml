@@ -3,6 +3,7 @@ version: '3.7'
 services:
   dbimport:
     build: .
+    image: httpcheck_dev
     restart: unless-stopped
     command: /usr/local/bin/httpcheck-dbimport
     working_dir: /usr/src/app
@@ -13,6 +14,7 @@ services:
       - .:/usr/src/app
   httpcheck:
     build: .
+    image: httpcheck_dev
     restart: unless-stopped
     working_dir: /usr/src/app
     command: /usr/local/bin/httpcheck --websites ./websites.json
