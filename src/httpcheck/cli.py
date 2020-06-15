@@ -5,8 +5,9 @@ import click
 
 from . import dbimport
 from . import main
+from .common import KafkaConfig
+from .common import WebsiteMonitorConfig
 from .decorators import help_messages
-from .websitemonitor import WebsiteMonitorConfig
 
 
 # Here is a preconfigured click Path type
@@ -73,7 +74,7 @@ def httpcheck_main(
             identifier=identifier,
             method=method,
             url=url,
-            timeout_read=timeout,
+            timeout=timeout,
             retries=retries,
             regex=regex,
             frequency=frequency,
@@ -123,7 +124,7 @@ def dbimport_main(
 ):
     set_log_level_from_environment()
 
-    kafka_config = dbimport.KafkaConfig(
+    kafka_config = KafkaConfig(
         broker=kafka_broker,
         topic=kafka_topic,
         ssl_cafile=kafka_ssl_cafile,

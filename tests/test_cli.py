@@ -4,7 +4,7 @@ from click.testing import CliRunner
 
 from httpcheck import main
 from httpcheck.cli import httpcheck_main as httpcheck_cli
-from httpcheck.websitemonitor import WebsiteMonitorConfig
+from httpcheck.common import WebsiteMonitorConfig
 
 
 def test_consistent_defaults(httpx_mock):

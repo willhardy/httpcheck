@@ -1,5 +1,4 @@
 import contextlib
-import dataclasses
 import datetime
 import json
 import logging
@@ -9,12 +8,14 @@ import psycopg2
 import pykafka
 from pykafka.common import OffsetType
 
+from .common import KafkaConfig
+
 
 logger = logging.getLogger(__name__)
 DDL_FILENAME = pkg_resources.resource_filename("httpcheck", "sql/ddl.sql")
 
 
-def main(database_dsn, kafka_config):
+def main(database_dsn: str, kafka_config: KafkaConfig):
     """ Read from Kafka and write to the database. """
     with get_db_cursor(database_dsn) as cur:
         create_db_schema(cur)
@@ -24,15 +25,6 @@ def main(database_dsn, kafka_config):
                 save_data_to_database(cur, data)
         except (KeyboardInterrupt, SystemExit):
             pass
-
-
-@dataclasses.dataclass
-class KafkaConfig:
-    broker: str
-    topic: str
-    ssl_cafile: str
-    ssl_certfile: str
-    ssl_keyfile: str
 
 
 @contextlib.contextmanager
