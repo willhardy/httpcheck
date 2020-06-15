@@ -1,10 +1,12 @@
 import pytest
 
+from httpcheck import websitecheck
+
 
 @pytest.mark.asyncio
-async def test_basic(monitor, httpx_mock):
-    httpx_mock.add_response(url=monitor.config.url)
-    output = await monitor.make_attempt()
+async def test_basic(monitor_config, httpx_mock):
+    httpx_mock.add_response(url=monitor_config.url)
+    output = await websitecheck.run(monitor_config)
     assert output.is_online
     assert output.status_code == 200
     assert output.response_time is not None

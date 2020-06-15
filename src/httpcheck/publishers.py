@@ -21,7 +21,7 @@ class BasePublisher:
 
     key = None
 
-    @dataclasses.dataclass
+    @dataclasses.dataclass(frozen=True)
     class Config:
         pass
 
@@ -57,7 +57,7 @@ class ConsolePublisher(BasePublisher):
 class KafkaPublisher(BasePublisher):
     key = "kafka"
 
-    @dataclasses.dataclass
+    @dataclasses.dataclass(frozen=True)
     class Config:
         broker: str
         topic: str
