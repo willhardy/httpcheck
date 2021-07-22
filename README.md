@@ -32,28 +32,11 @@ $ httpcheck https://one.example.com https://two.example.com
 
 Send the `INT` signal (ie type CTRL-C) to stop.
 
-To write the output to Kafka, provide `--kafka-broker` and `--kafka-topic`.
-All options can be alternatively provided by environment variables, so a full Kafka configuration would be provided by the following environment variables:
-
-```bash
-HTTPCHECK_KAFKA_BROKER=kafka.example.com:9092
-HTTPCHECK_KAFKA_TOPIC=httpcheck
-HTTPCHECK_KAFKA_SSL_CAFILE=./ca.pem
-HTTPCHECK_KAFKA_SSL_CERTFILE=./service.cert
-HTTPCHECK_KAFKA_SSL_KEYFILE=./service.key
-```
-
-A second entry point is availble that will read the Kafka topic and write to a PostgreSQL database. It requires`DATABASE_URL` to be defined (in addition to Kafka configuration).
-
-```bash
-$ httpcheck-dbimport
-```
 
 ## Output
 
 Each time a website is checked, a simple JSON object is created summarising the attempt.
 This is printed to stdout (the entire output will then be [jsonlines](http://jsonlines.org/)).
-The output can also be optionally sent to the configured Kafka instance.
 
 The JSON object will have the following keys:
 
@@ -117,12 +100,10 @@ If you would like to reserve the ability to seamlessly change the URL, you can u
 }
 ```
 
-Note that the Kafka configuration cannot be overriden on a per-website basis, it must be provided on the command line or in environment variables.
-
 ## Tests
 
  * Run the full test suite with `make test` (will build and run inside docker).
- * Run a system test by defining the relevant Kafka and database configuration in a file called `.env` and calling `make system-test`
+ * Run a system test by calling `make system-test`
 
 ## More information
 

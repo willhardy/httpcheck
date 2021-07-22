@@ -15,39 +15,36 @@ async def test_http_error(monitor_config, httpx_mock, status_code):
 
 
 @pytest.mark.parametrize(
-    "exception_class",
+        "exception",
     [
-        httpcore.ConnectError,  # DNS problem, SSL certificate error, etc
-        httpcore.CloseError,
-        httpcore.ReadError,
-        httpcore.WriteError,
-        httpx.ConnectTimeout,
-        httpx.CookieConflict,
-        httpx.DecodingError,
-        httpx.HTTPError,
-        httpx.InvalidURL,
-        httpx.NetworkError,
-        httpx.NotRedirectResponse,
-        httpx.PoolTimeout,
-        httpx.ProtocolError,
-        httpx.ProxyError,
-        httpx.ReadTimeout,
-        httpx.RequestBodyUnavailable,
-        httpx.RequestNotRead,
-        httpx.ResponseClosed,
-        httpx.ResponseNotRead,
-        httpx.StreamConsumed,
-        httpx.TooManyRedirects,
-        httpx.WriteTimeout,
+        httpcore.ConnectError("message"),  # DNS problem, SSL certificate error, etc
+        httpcore.CloseError("message"),
+        httpcore.ReadError("message"),
+        httpcore.WriteError("message"),
+        httpx.HTTPError("message"),
+        httpx.RequestError("message"),
+        httpx.TimeoutException("message"),
+        httpx.WriteTimeout("message"),
+        httpx.PoolTimeout("message"),
+        httpx.NetworkError("message"),
+        httpx.ReadError("message"),
+        httpx.WriteError("message"),
+        httpx.ConnectError("message"),
+        httpx.CloseError("message"),
+        httpx.ProxyError("message"),
+        httpx.UnsupportedProtocol("message"),
+        httpx.RemoteProtocolError("message"),
+        httpx.DecodingError("message"),
+        httpx.TooManyRedirects("message"),
     ],
 )
 @pytest.mark.asyncio
-async def test_exception(monitor_config, httpx_mock, exception_class):
+async def test_exception(monitor_config, httpx_mock, exception):
     def raise_exception(*args, **kwargs):
-        raise exception_class()
+        raise exception
 
     httpx_mock.add_callback(raise_exception)
     output = await websitecheck.run(monitor_config)
     assert output.is_online is False
     assert output.exception is not None
-    assert exception_class.__name__ in output.exception
+    assert type(exception).__name__ in output.exception

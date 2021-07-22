@@ -1,17 +1,6 @@
 version: '3.7'
 
 services:
-  dbimport:
-    build: .
-    image: httpcheck_dev
-    restart: unless-stopped
-    command: /usr/local/bin/httpcheck-dbimport
-    working_dir: /usr/src/app
-    env_file: .env
-    environment:
-      - "LOG_LEVEL=INFO"
-    volumes:
-      - .:/usr/src/app
   httpcheck:
     build: .
     image: httpcheck_dev

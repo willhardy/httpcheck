@@ -1,5 +1,4 @@
 import json
-import os
 import random
 import signal
 import string
@@ -8,16 +7,11 @@ import sys
 import tempfile
 
 import click
-import psycopg2.extras
 
 
 def system_test():
     """ Complete end-to-end system test involving most (all?) moving parts.
-
-    Requires Kafka and Database configuration.
     """
-    validate_environment()
-
     # Generate random identifiers to help verify the new data arrived.
     identifier1 = get_random_identifier()
     identifier2 = get_random_identifier()
@@ -40,43 +34,11 @@ def system_test():
             timeout=14,
         )
 
-    # Import the data into the database
-    run("httpcheck-dbimport", timeout=10)
-
-    # Check the items arrived in the database
-    records = get_results_from_database(identifier1)
-    assert_equal(len(records), 3)
-    assert_equal([record["is_online"] for record in records], [True, True, True])
-
-    # Check the items arrived in the database
-    records = get_results_from_database(identifier2)
-    assert_equal(len(records), 2)
-    assert_equal([record["is_online"] for record in records], [False, False])
-
     click.secho("SUCCESS!", fg="green", bold=True)
 
 
 def assert_equal(actual, expected):
     assert actual == expected, f"{actual} != {expected}"
-
-
-def validate_environment():
-    required_env_vars = [
-        "DATABASE_URL",
-        "HTTPCHECK_KAFKA_BROKER",
-        "HTTPCHECK_KAFKA_TOPIC",
-    ]
-    missing_vars = ", ".join(e for e in required_env_vars if e not in os.environ)
-    if missing_vars:
-        click.secho(
-            "\n"
-            "Please provide Kafka and postgres configuration in a file called `.env`\n"
-            ""
-            f"Missing: {missing_vars}",
-            err=True,
-            fg="red",
-        )
-        sys.exit(1)
 
 
 def get_random_identifier():
@@ -110,15 +72,6 @@ def run(cmd_str, timeout):
         click.secho(stdout)
         click.secho("\nSTDERR:", fg="yellow")
         click.secho(stderr)
-
-
-def get_results_from_database(identifier):
-    conn = psycopg2.connect(os.environ["DATABASE_URL"])
-    conn.set_session()
-    with conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-            cur.execute("SELECT * FROM attempts WHERE identifier = %s", (identifier,))
-            return list(cur)
 
 
 if __name__ == "__main__":

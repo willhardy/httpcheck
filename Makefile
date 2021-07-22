@@ -16,6 +16,11 @@ build: .env  ## Build wheel
 	docker-compose run --rm httpcheck python3 ./setup.py bdist_wheel -d build
 
 
+.PHONY: build-docker
+build-docker: .env  ## Build wheel
+	docker build --file prod.Dockerfile --tag httpcheck:latest .
+
+
 .env:
 	touch .env
 

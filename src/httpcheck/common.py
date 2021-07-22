@@ -53,15 +53,6 @@ class WebsiteCheckResults:
         )
 
 
-@dataclasses.dataclass(frozen=True)
-class KafkaConfig:
-    broker: str
-    topic: str
-    ssl_cafile: str
-    ssl_certfile: str
-    ssl_keyfile: str
-
-
 def print_monitor_configs(*monitor_configs):
     lines = []
     lines.append("---")

@@ -53,7 +53,7 @@ def _process_exception(exception, results):
 
 
 async def make_http_request(config):
-    _timeout = httpx.Timeout(read_timeout=config.timeout)
+    _timeout = httpx.Timeout(5, read=config.timeout)
     headers = {"user-agent": f"httpcheck/{config.identifier}"}
     async with httpx.AsyncClient(timeout=_timeout, headers=headers) as client:
         try:
