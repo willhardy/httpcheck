@@ -1,0 +1,4 @@
+.git
+__pycache__
+httpcheck.egg-info
+.pytest_cache
