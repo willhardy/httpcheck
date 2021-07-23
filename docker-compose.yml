@@ -2,7 +2,9 @@ version: '3.7'
 
 services:
   httpcheck:
-    build: .
+    build:
+      context: .
+      dockerfile: dev.Dockerfile
     image: httpcheck_dev
     restart: unless-stopped
     working_dir: /usr/src/app

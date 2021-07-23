@@ -11,11 +11,11 @@ $ make build
 $ pip install build/httpcheck-1.0-py3-none-any.whl
 ```
 
-Alternatively, we can run it directly in docker:
+Or build a docker image and run it there:
 
 ```bash
-$ touch .env
-$ docker-compose run --rm httpcheck httpcheck --help
+$ docker build --tag httpcheck:latest .
+$ docker run --rm httpcheck:latest httpcheck --help
 ```
 
 ## Basic Usage
@@ -98,6 +98,15 @@ If you would like to reserve the ability to seamlessly change the URL, you can u
   "one": {"url": "https://example.com/health1", "frequency": 300 },
   "two": {"url": "https://example.com/health2", "frequency": 120 }
 }
+```
+
+## Development
+
+Alternatively, we can run it directly in docker-compose:
+
+```bash
+$ touch .env
+$ docker-compose run --rm httpcheck httpcheck --help
 ```
 
 ## Tests

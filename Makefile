@@ -18,7 +18,7 @@ build: .env  ## Build wheel
 
 .PHONY: build-docker
 build-docker: .env  ## Build wheel
-	docker build --file prod.Dockerfile --tag httpcheck:latest .
+	docker build --tag httpcheck:latest .
 
 
 .env:
