@@ -1,3 +1,3 @@
 from setuptools import setup
 
-setup(name='httpcheck')
+setup(name="httpcheck")

@@ -26,6 +26,7 @@ class WebsiteMonitorConfig:
 @dataclasses.dataclass
 class WebsiteCheckResults:
     """ Run and record the results for a single website check. """
+
     method: str
     url: str
     timestamp: str

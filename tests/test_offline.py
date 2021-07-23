@@ -15,7 +15,7 @@ async def test_http_error(monitor_config, httpx_mock, status_code):
 
 
 @pytest.mark.parametrize(
-        "exception",
+    "exception",
     [
         httpcore.ConnectError("message"),  # DNS problem, SSL certificate error, etc
         httpcore.CloseError("message"),
