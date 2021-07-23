@@ -25,6 +25,7 @@ def httpcheck_cli():
         "regex": "A regular expression to search for in the response",
         "frequency": "Seconds to wait before re-checking website",
         "websites": "Filename for a JSON file multiple website configuration",
+        "timezone": "Timezone to report attempts in",
         "once": "Only run the check once for each website, do not monitor",
     }
 )
@@ -37,6 +38,7 @@ def httpcheck_cli():
 @click.option("--regex",)
 @click.option("--frequency", default=300)
 @click.option("--websites", type=FilePath)
+@click.option("--timezone", default="UTC")
 @click.option("--once", is_flag=True)
 def httpcheck_main(
     urls,
@@ -47,6 +49,7 @@ def httpcheck_main(
     regex,
     frequency,
     websites,
+    timezone,
     once,
 ):
     set_log_level_from_environment()
@@ -61,6 +64,7 @@ def httpcheck_main(
             retries=retries,
             regex=regex,
             frequency=frequency,
+            timezone=timezone,
         )
         monitor_configs[url] = monitor_config
 

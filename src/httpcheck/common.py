@@ -4,13 +4,9 @@ import logging
 import socket
 from typing import Optional
 
+import pytz
 
 logger = logging.getLogger(__name__)
-
-
-def now_isoformat():
-    now = datetime.datetime.utcnow().isoformat()
-    return f"{now}+00:00"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -24,15 +20,15 @@ class WebsiteMonitorConfig:
     regex: Optional[str] = None
     frequency: int = 300  # seconds
     source: Optional[str] = None
+    timezone: str = "UTC"
 
 
 @dataclasses.dataclass
 class WebsiteCheckResults:
     """ Run and record the results for a single website check. """
-
     method: str
     url: str
-    timestamp: str = dataclasses.field(default_factory=now_isoformat)
+    timestamp: str
     hostname: Optional[str] = dataclasses.field(default_factory=socket.getfqdn)
     identifier: Optional[str] = None
     is_online: Optional[bool] = None
@@ -45,8 +41,10 @@ class WebsiteCheckResults:
 
     @classmethod
     def from_config(cls, config):
+        timezone = pytz.timezone(config.timezone)
         return cls(
             url=config.url,
+            timestamp=datetime.datetime.now(timezone).isoformat(),
             method=config.method,
             identifier=config.identifier,
             regex=config.regex,
